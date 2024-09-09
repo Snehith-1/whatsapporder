@@ -1,165 +1,500 @@
 <!DOCTYPE html>
+<!-- saved from url=(0024)https://www.qrstuff.com/ -->
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Pay Integration</title>
-    <!-- Link to the manifest file -->
-    <link rel="manifest" href="manifest.json">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-</head>
-<body>
-    <button class="btn btn-info pull-right" onclick="onBuyClicked()">Payment Now</button>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
+    <link rel="canonical" href="https://www.qrstuff.com/">
+
+    <script type="text/javascript" async=""
+        src="../payment/assets/analytics.js.download"></script>
+    <script type="text/javascript" async=""
+        src="../payment/assets/recaptcha__en.js.download"
+        crossorigin="anonymous"
+        integrity="sha384-qXuJ4ygBop9oxjZHS9+4GBxjI9VjYCwfwQvoBapXOHPeeKLPf2BGerMyPJZODZPN"></script>
+    <script async="" src="../payment/assets/gtm.js.download"></script>
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+
+ 
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>UPI GATEWAY - UPI Payment Gateway</title>
+ <script src="../payment/assets/generator-3e22166637.min.js.download"
+        defer=""></script>
+  <script async=""
+        src="../payment/assets/hotjar-2859618.js.download"></script>
     <script>
-        const canMakePaymentCache = 'canMakePaymentCache';
-
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(function(registration) {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                })
-                .catch(function(error) {
-                    console.log('Service Worker registration failed:', error);
-                });
-        }
-
-        function onBuyClicked() {
-            if (!window.PaymentRequest) {
-                console.log('Web payments are not supported in this browser.');
-                return;
-            }
-
-            const supportedInstruments = [{
-                supportedMethods: 'https://tez.google.com/pay',
-                data: {
-                    pa: 'Q31067185@ybl',
-                    pn: 'Merchant Name',
-                    tr: '6401262', // Your custom transaction reference ID
-                    url: 'https://efinepay.com',
-                    mc: '4722', // Your merchant category code
-                    tn: 'Purchase in Merchant',
-                },
-            }];
-
-            const details = {
-                total: {
-                    label: 'Total',
-                    amount: {
-                        currency: 'INR',
-                        value: '1.00',
-                    },
-                },
-                displayItems: [{
-                    label: 'Original Amount',
-                    amount: {
-                        currency: 'INR',
-                        value: '1.00',
-                    },
-                }],
-            };
-
-            const options = {
-                requestShipping: false,
-                requestPayerName: true,
-                requestPayerPhone: true,
-                requestPayerEmail: true,
-            };
-
-            let request;
-            try {
-                request = new PaymentRequest(supportedInstruments, details, options);
-            } catch (e) {
-                console.log('Payment Request Error: ' + e.message);
-                return;
-            }
-
-            if (!request) {
-                console.log('PaymentRequest initialization failed.');
-                return;
-            }
-
-            checkCanMakePayment(request)
-                .then((result) => {
-                    if (result) {
-                        return request.show();
-                    } else {
-                        console.log('Cannot make payment with Google Pay.');
-                    }
-                })
-                .then(function(instrument) {
-                    processResponse(instrument);
-                })
-                .catch(function(err) {
-                    console.log('Error handling payment request: ' + err);
-                });
-        }
-
-        function checkCanMakePayment(request) {
-            if (sessionStorage.hasOwnProperty(canMakePaymentCache)) {
-                return Promise.resolve(JSON.parse(sessionStorage.getItem(canMakePaymentCache)));
-            }
-
-            let canMakePaymentPromise = Promise.resolve(true);
-
-            if (request.canMakePayment) {
-                canMakePaymentPromise = request.canMakePayment();
-            }
-
-            return canMakePaymentPromise
-                .then((result) => {
-                    sessionStorage.setItem(canMakePaymentCache, JSON.stringify(result));
-                    return result;
-                })
-                .catch((err) => {
-                    console.log('Error calling canMakePayment: ' + err);
-                });
-        }
-
-        function processResponse(instrument) {
-            var instrumentString = instrumentToJsonString(instrument);
-            console.log(instrumentString);
-
-            $.ajax({
-                type: 'POST',
-                url: 'buy.php',
-                data: { trackDetails: instrumentString },
-                success: function(response) {
-                    if (response === 'SUCCESS') {
-                        console.log('Payment successful.');
-                    } else {
-                        console.log('Payment not successful: ' + response);
-                    }
-                    completePayment(instrument, 'success', 'Payment completed.');
-                },
-                error: function(response) {
-                    console.log('ERROR BLOCK');
-                    completePayment(instrument, 'fail', 'Payment failed.');
-                }
-            });
-        }
-
-        function instrumentToJsonString(instrument) {
-            var instrumentDictionary = {
-                methodName: instrument.methodName,
-                details: instrument.details,
-                payerName: instrument.payerName,
-                payerPhone: instrument.payerPhone,
-                payerEmail: instrument.payerEmail,
-            };
-            return JSON.stringify(instrumentDictionary, undefined, 2);
-        }
-
-        function completePayment(instrument, result, msg) {
-            instrument.complete(result)
-                .then(function() {
-                    console.log('Payment complete.');
-                })
-                .catch(function(err) {
-                    console.log('Error completing payment: ' + err);
-                });
+        function logout(e) {
+            e.preventDefault();
+            document.forms['logout-form'].submit()
         }
     </script>
+    
+   
+   <style>
+   .imgrpuntttt {
+  border-radius: 50%;   border:1px solid #FF3300;
+}
+   </style>
+   
+    <style>
+        body {
+            background: #667eea;
+            background: -webkit-linear-gradient(to right, #764ba2, #667eea);
+            background: linear-gradient(to right, #764ba2, #667eea);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .qr-wrapper {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+        }
+        
+        .qr-container {
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+            border-radius: 8px;
+        }
+        
+        .qr-title {
+            background: #2EAB50;
+            color: #fff;
+            padding: 10px;
+            font-size: 18px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .orderid{ font-family: Arial, sans-serif; font-size:12px; color:#999999;}
+        .validity1{font-family: Arial, sans-serif; font-size:12px; color:#999999;}
+          .validity2{font-family: Arial, sans-serif; font-size:13px; color:#999999;}
+        .qr-code {
+            padding: 10px;
+            margin: 20px auto;
+            display: inline-block;
+            border: 4px solid; /* Required for gradient borders */
+            border-image-slice: 1;
+            border-width: 4px;
+            border-image-source: linear-gradient(45deg, #f3ec78, #af4261); /* Gradient border */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .amount {
+            font-size: 16px;
+            margin: 20px 0;
+            color: #343a40;
+        }
+        
+        .validity {
+    font-size: 12px;
+    color: #000000; /* Changing color to black */
+    /* Other properties remain unchanged */
+}
+
+        .pay-button {
+            display: none;
+            background-color: #2EAB50;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        @media screen and (max-width: 768px) {
+            .pay-button {
+                
+                display: inline-block;
+            }
+        }
+    </style>
+    
+    <div class="card">
+      <div class="qr-wrapper">
+        <div class="qr-container">
+            <div class="qr-title">Efinepay</div>
+
+            <div class="qr-code">
+                          
+            <img src="https://efinepay.com/pay/assets/img/gpay.png" alt="gpay" height="20px"> 
+<img src="https://efinepay.com/pay/assets/img/paytm.png" alt="gpay" height="20px">
+<img src="https://efinepay.com/pay/assets/img/phonepe.png" alt="gpay" height="20px">
+<img src="https://efinepay.com/pay/assets/img/bhim_logo.png" alt="gpay" height="20px">
+<img src="https://efinepay.com/pay/assets/img/amazonpay.png" alt="gpay" height="20px">
+
+
+                <img  style="width:250px;height:250px;" data-v-2eedfba3=''src='data:image/jpg;base64,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' alt='' class='mw-100'>
+            </div>
+            
+          <!--<a href='phonepe://pay?pa=Yespay.Smesm000009787@Yesbankltd&am=1&pn=name&tn=6401262&tr=6401262&&mc=4411' class='methodsWrapper appPayment'>
+         PhonePe
+          </a>-->
+    
+     <a href="data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAxsAAAMbAQMAAAAfEBqKAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAF1klEQVR4nO3dPZIbLRCA4XY52HCPoKPoaDNH01HmCA4VqBaLn/4BjTZwsOCqtwPXIhDPfFGLhuETIQiCIAiCIAji/4/fKcTX84OP9Ecu6Zb7fj0/usvn89+bbKkM195Nv5KbOcpUdbDFHQQEBARkDcT+lCdSBx7PRps1RzXb9+o0ez849B4nM4OAgICAzEbC93LGSK1p+eSQa/7kq3yhppcy66PNcT0dDAICAgKyLqJLB5v1kJJefpVhtnSIvZKRR2uCgICAgCyO1CgpQuNSezWO0tsaVlISM0FAQEBA1kM0So/GXlNETi/VDAnkqoPuIm/Sy/elKBAQEBCQH0VCeI2/zfoPzRAgICAgIEsgQ2TTEkiyfJLDMkaO3TcELnoI6PfbWUFAQEBAVkCuNQXEtUKr8dfYPE0c2nyIbgUPTem/CwICAgKyADLkhO4IZ9gQiOlFdDPhKH8bUlcSZwECAgICMgfR0o4V9T9KxmhLB00g1+e/wzGftl2gvV2VaI/byCAgICAgkxGxFGH5JBzVkTGBdOd6PPnYC7tm5riDgICAgKyA6MCkCaT2hCqRFX7i4NQ/0S6WbcSbICAgICCLIHpZzq7NnBNyNNNO7uhq4GRwW0nU3puMAQICAgIyF7lbT5ssvJLrp35alWioA32URhusr/Oel6JAQEBAQGYin54TFCnxJXFhMWwIpGQbAiHCW1wPEBAQEJA1EO2R+L2QImpY0ajOevWlw/DC7lBDAgEBAQFZAuluwX+En/82TW2meKIzlIXEN3s9F4GAgICArINoTpB6onPINN3+gJ/3bMlHi0bhgKdVmIb1CQgICAjITCTM+nIXckVC+ODkVaK2ktD9AUs+ICAgICCLIClZxtDXaluKqKEv3VqzTePJ55o/6atEfWoCAQEBAZmJeM/em1tKfcZo0+jubmm8nOux2zRf9n5BQEBAQGYhXU7oo/VaAolhT6Qv7L72CggICAjISsjFv6fNlEKKKNMMGcP3B/IDir+DG5IPCAgICMgSSEphcaDnem511qEOVNPLEctC9sJuSsl69+GmZBAQEBCQuYgvDoJZQk/uyDjr7bT35IlAQEBAQBZBrKdGuG4h7hxYf36EzQdfdKM4ngkKM4OAgICATEa80rP7S7c59uHnv9+I2c57pi6fdFO1AAEBAQFZAtEkcBPRKlEY6O/ghieyR8jxHnkpRYGAgICAzEL8LmQzW3qJP/+3FJDwROFuBs02afwuCAgICMhkJJzKjHu/W+rSy64riU9Hhndw/TIGeXvFAwgICAjIHER/74umlzpr8jd0U7LFgd24piWlQ04ivTnRCQICAgLy84iIX7dgPeFEZ4jhvGeOujg4e0AQEBAQkGWQuHQQL+2U78XN3s68xcGX+Ag1QEBAQEDWQnRgWyu8nMfXbNM2exVJ8Sz/9pKLTi7aAQEBAQGZg8QekZATwmqgJRC/X2HYCm6bvd4MuQgEBAQEZAkklHa0DlQipojNmyH0f3iy5eEP0Vt5Nn1AEBAQEJBFEK30mJljl6EZTNv77R6he8A31zGDgICAgMxA9E2srS8LiRaNUjq8aFTDikZ30cs17bWtao7/FSAgICAgc5HUZrVmWEn4yR07vG/HPz22ce93rBKBgICAgMxDas9R/k6pWw3Y4kC0V+Pmg4MJAgICArImMoQmENGf/1ryD+d6WnqpvSezWu+7AAEBAQH5USSe62lrBWmzdnWgLYWVhGiVqOaiNquvM0o8QEBAQEBWQfwHvu3filaJcmgCCc0yOG4X7HGqMBgEBAQEZBEkHOTRfBJWAyFFaLTdXT/Xs0vXv5+8DAYCAgICsgjiYVUindUeoYZNc4lngrSkJF2mAgEBAQFZCvEav5mX8kEwQ7bRjeISehp03DcGAQEBAZmNaDREq0TWa6d+upXEV9c7Nr/bEAABAQEB+WEkhC8drjVj+GpgqyM0Y0jMJ+G7ul1wdmwUBAQEBGQOQhAEQRAEQRDE/xx/ATb1QC7FV1TCAAAAAElFTkSuQmCC" class="download-button btn btn-primary" style="padding: 5px 10px; font-size: 14px; font-weight: bold; color: blue;" download="qr_code.png">SAVE QR</a>
+          
+             <div class="validity2">Scan to pay ₹ 3</div>
+            
+            <p class='orderid'>Transation Number : 6401262  </p>
+           
+            <button class="pay-button" onclick="onBuyClicked()">Pay with Gpay <img styule="float:right;" src="https://efinepay.com/pay/assets/img/ggpay.png" height="20" width="30"/></button>
+             <div class="validity1">Valid until: <span id="timeout"></span></div>
+        </div>
+    </div>
+    
+    </div>
+
+
+  
 </body>
+
+
+
+
+<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+<script>
+
+  function generateQR(user_input = 'upi://pay?pa=Q743042485@ybl&am=1&pn=Store&tn=TEST5210587479_7558488516&tr=TEST5210587479_7558488516&mc=4411') {
+    $('.appPayment').css('display', 'flex');
+    $('#backBtn').attr('onclick','qr_back();')
+    document.getElementById('qrCodeWrapper').style.display = 'flex';
+    $('.qrCodeBody').html(``);
+    var qrcode = new QRCode(document.querySelector('.qrCodeBody'), {
+      text: ``,
+      width: 180, //default 128
+      height: 180,
+      colorDark : '#000000',
+      colorLight : '#ffffff',
+      correctLevel : QRCode.CorrectLevel.H
+    });
+    paymentClicked();
+  } 
+
+    function qr_back() {
+      document.getElementById('qrCodeWrapper').style.display = 'flex';
+      $('.appPayment').css('display', 'flex');
+      $('#backBtn').attr('onclick','cancelOrder();')
+      document.getElementById('continue-first-btn').style.display = 'none';
+    }
+
+    function paymentClicked() {
+      document.getElementById('continue-first-btn').style.display = 'block';
+    }
+
+    function paynow() {
+      document.getElementById('payment-first').style.display = 'none';
+      document.getElementById('payment-second').style.display = 'block';
+      document.getElementById('payment-third').style.display = 'none';
+    }
+
+    function paynow_back() {
+      document.getElementById('payment-first').style.display = 'block';
+      document.getElementById('payment-second').style.display = 'none';
+      document.getElementById('payment-third').style.display = 'none';
+      document.getElementById('continue-first-btn').style.display = 'none';
+    }
+
+
+
+
+
+function upiCountdown(elm,minute,second,url) {
+document.getElementById(elm).innerHTML =minute + ':' + second; startTimer();
+
+function startTimer() {
+  var presentTime = document.getElementById(elm).innerHTML;
+  var timeArray = presentTime.split(/[:]+/);
+  var m = timeArray[0];
+  var s = checkSecond((timeArray[1] - 1));
+  if(s==59){m=m-1}
+  if(m<0){
+      
+      swal ( 'Oops' ,  'Transaction Timeout!' ,  'error' );
+      window.location.href = 'allupipay.in';
+      
+  }
+  document.getElementById(elm).innerHTML =
+    m + ':' + s;
+  //console.log(m)
+  setTimeout(startTimer, 1000);
+}
+
+function checkSecond(sec) {
+  if (sec < 10 && sec >= 0) {sec = '0' + sec}; // add zero in front of numbers < 10
+  if (sec < 0) {sec = '59'};
+  return sec;
+}
+}
+
+upiCountdown('timeout',005,00,location.href);
+
+const timerID=setInterval(check, 3000);
+
+function check(){
+$.ajax({
+            type: 'post',
+            url: 'https://allupipay.in/Order/Status',
+            data: 'order_id=6401262',
+            success: function (data) {
+         //   data = JSON.parse(data)
+           // console.log(JSON.stringify(data));
+         console.log(data);
+             if(window.ReactNativeWebView){
+            window.ReactNativeWebView.postMessage(data.status)
+            }
+         
+                if(data.status =='SUCCESS'){
+                
+                
+                    Swal.fire('Your Payment Recived Successfully','Please Wait!','success')  
+                    
+        
+					
+					window.location.href = 'https://allupipay.in/User/buy_plan/callback/?order_id=6401262';clearInterval(timerID);             
+             
+                }else{
+                    failed
+                }
+                if(data.status =='FAILURE'){
+                    Swal.fire('Your Payment Was Failed','Please Wait!','info')
+                     setTimeout(function () {
+                  
+                     window.location.href = 'https://allupipay.in/User/buy_plan/callback/?order_id=6401262';
+                     }, 2000);
+                     console.log(data);
+                }
+            }
+            })    
+}
+
+ const canMakePaymentCache = 'canMakePaymentCache';
+    /** Launches payment request flow when user taps on buy button. */
+    function onBuyClicked() {
+      if (!window.PaymentRequest) {
+        console.log('Web payments are not supported in this browser.');
+        return;
+      }
+     //insahallah20141@ybl
+      // Create supported payment method.
+      const supportedInstruments = [  
+        {
+          supportedMethods: ['https://tez.google.com/pay'],
+          data: {
+            pa: 'sweetysnehith143-1@okaxis',
+            pn: 'Merchant Name',
+            tr: '6401262',  // Your custom transaction reference ID
+            url: 'https://efinepay.com',
+            mc: '7361', //Your merchant category code
+            tn: 'Purchase in Merchant',
+          },
+        }
+      ];
+
+      // Create order detail data.
+      const details = {
+        total: {
+          label: 'Total',
+          amount: {
+            currency: 'INR',
+            value: '3', // sample amount
+          },
+        },
+        displayItems: [{
+          label: 'Original Amount',
+          amount: {
+            currency: 'INR',
+            value: '3',
+          },
+        }],
+      };
+
+      const options = {
+        requestShipping: true,
+        requestPayerName: true,
+        requestPayerPhone: true,
+        requestPayerEmail: true,
+        requestPayerPassWord: true,
+        shippingType: 'shipping',
+      };
+
+      // Create payment request object.
+      let request = null;
+      try {
+        request = new PaymentRequest(supportedInstruments, details);
+      } catch (e) {
+        console.log('Payment Request Error: ' + e.message);
+        return;
+      }
+      if (!request) {
+        console.log('Web payments are not supported in this browser.');
+        return;
+      }
+
+      var canMakePaymentPromise = checkCanMakePayment(request);
+      canMakePaymentPromise
+        .then((result) => {
+          showPaymentUI(request, result);
+        })
+        .catch((err) => {
+          console.log('Error calling checkCanMakePayment: ' + err);
+        });
+    }
+
+    function checkCanMakePayment(request) {
+      // Checks canMakePayment cache, and use the cache result if it exists.
+      if (sessionStorage.hasOwnProperty(canMakePaymentCache)) {
+        return Promise.resolve(JSON.parse(sessionStorage[canMakePaymentCache]));
+      }
+
+      // If canMakePayment() isn't available, default to assuming that the method is
+      // supported.
+      var canMakePaymentPromise = Promise.resolve(true);
+
+      // Feature detect canMakePayment().
+      if (request.canMakePayment) {
+        canMakePaymentPromise = request.canMakePayment();
+      }
+
+      return canMakePaymentPromise
+        .then((result) => {
+          // Store the result in cache for future usage.
+          sessionStorage[canMakePaymentCache] = result;
+          return result;
+        })
+        .catch((err) => {
+          console.log('Error calling canMakePayment: ' + err);
+        });
+    }
+    function showPaymentUI(request, canMakePayment) {
+      if (!canMakePayment) {
+        handleNotReadyToPay();
+        return;
+      }
+
+      // Set payment timeout.
+      let paymentTimeout = window.setTimeout(function () {
+        window.clearTimeout(paymentTimeout);
+        request.abort()
+          .then(function () {
+            console.log('Payment timed out after 20 minutes.');
+          })
+          .catch(function () {
+            console.log('Unable to abort, user is in the process of paying.');
+          });
+      }, 5 * 60 * 1000); /* 20 minutes */
+
+
+      request.show()
+        .then(function (instrument) {
+
+          window.clearTimeout(paymentTimeout);
+          processResponse(instrument); // Handle response from browser.
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
+    }
+
+    /**
+    * Process the response from browser.
+    *
+    * @private
+    * @param {PaymentResponse} instrument The payment instrument that was authed.
+    */
+
+
+    function instrumentToJsonString(instrument) {
+      var instrumentDictionary = {
+        methodName: instrument.methodName,
+        details: instrument.details,
+        payerName: "Ansar Hussain",
+        payerPhone: "7766554433",
+        payerEmail: "Ansar@gmal.com",
+      };
+      return JSON.stringify(instrumentDictionary, undefined, 2);
+    }
+    function completePayment(instrument, result, msg) {
+      instrument.complete(result)
+        .then(function () {
+          console.log('Payment succeeds.');
+          console.log(details);
+
+         // console.log('msgAnsar', msg.details.tezResponse.Status);
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
+    }
+    function processResponse(instrument) {
+      var instrumentString = instrumentToJsonString(instrument);
+  console.log('AAAAAA',instrumentString);
+
+      $.ajax({
+        type: 'post',
+        url: 'https://allupipay.in/Order/buy', 
+        data: { trackDetails: instrumentString },
+
+        success: function (response) {
+          console.log('SUCCESS BLOCK');
+      console.log('AB',response);
+      if(response=='SUCCESS'){
+      window.location.href="https://google.com";
+      }
+         // console.log('AB', response.details.tezResponse.Status);
+
+          //console.log('CD', response.details.tezResponse);
+          completePayment(instrument);
+        },
+
+        error: function (response) {
+          console.log('ERROR BLOCK');
+          console.log(response);
+
+        }
+      });
+
+
+
+
+    }
+
+    /**
+    * Notify browser that the instrument authorization has completed.
+    *
+    * @private
+    * @param {PaymentResponse} instrument The payment instrument that was authed.
+    * @param {string} result Whether the auth was successful. Should be either
+    * 'success' or 'fail'.
+    * @param {string} msg The message to log in console.
+    */
+
+    /** Handle Google Pay not ready to pay case. */
+    function handleNotReadyToPay() {
+      alert('Google Pay is not ready to pay.');
+    }
+
+
+    
+</script>
 </html>
+
+
+
+
