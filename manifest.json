@@ -1,0 +1,14 @@
+{
+    "name": "My Web App",
+    "short_name": "WebApp",
+    "description": "A web app integrating Google Pay",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000",
+    "serviceworker": {
+        "src": "service-worker.js",
+        "scope": "/",
+        "use_cache": true
+    }
+}

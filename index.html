@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Pay Integration</title>
+    <!-- Link to the manifest file -->
+    <link rel="manifest" href="manifest.json">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+</head>
+<body>
+    <button class="btn btn-info pull-right" onclick="onBuyClicked()">Payment Now</button>
+
+    <script>
+        const canMakePaymentCache = 'canMakePaymentCache';
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(function(registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(function(error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+        }
+
+        function onBuyClicked() {
+            if (!window.PaymentRequest) {
+                console.log('Web payments are not supported in this browser.');
+                return;
+            }
+
+            const supportedInstruments = [{
+                supportedMethods: 'https://tez.google.com/pay',
+                data: {
+                    pa: 'Q31067185@ybl',
+                    pn: 'Merchant Name',
+                    tr: '6401262', // Your custom transaction reference ID
+                    url: 'https://efinepay.com',
+                    mc: '4722', // Your merchant category code
+                    tn: 'Purchase in Merchant',
+                },
+            }];
+
+            const details = {
+                total: {
+                    label: 'Total',
+                    amount: {
+                        currency: 'INR',
+                        value: '1.00',
+                    },
+                },
+                displayItems: [{
+                    label: 'Original Amount',
+                    amount: {
+                        currency: 'INR',
+                        value: '1.00',
+                    },
+                }],
+            };
+
+            const options = {
+                requestShipping: false,
+                requestPayerName: true,
+                requestPayerPhone: true,
+                requestPayerEmail: true,
+            };
+
+            let request;
+            try {
+                request = new PaymentRequest(supportedInstruments, details, options);
+            } catch (e) {
+                console.log('Payment Request Error: ' + e.message);
+                return;
+            }
+
+            if (!request) {
+                console.log('PaymentRequest initialization failed.');
+                return;
+            }
+
+            checkCanMakePayment(request)
+                .then((result) => {
+                    if (result) {
+                        return request.show();
+                    } else {
+                        console.log('Cannot make payment with Google Pay.');
+                    }
+                })
+                .then(function(instrument) {
+                    processResponse(instrument);
+                })
+                .catch(function(err) {
+                    console.log('Error handling payment request: ' + err);
+                });
+        }
+
+        function checkCanMakePayment(request) {
+            if (sessionStorage.hasOwnProperty(canMakePaymentCache)) {
+                return Promise.resolve(JSON.parse(sessionStorage.getItem(canMakePaymentCache)));
+            }
+
+            let canMakePaymentPromise = Promise.resolve(true);
+
+            if (request.canMakePayment) {
+                canMakePaymentPromise = request.canMakePayment();
+            }
+
+            return canMakePaymentPromise
+                .then((result) => {
+                    sessionStorage.setItem(canMakePaymentCache, JSON.stringify(result));
+                    return result;
+                })
+                .catch((err) => {
+                    console.log('Error calling canMakePayment: ' + err);
+                });
+        }
+
+        function processResponse(instrument) {
+            var instrumentString = instrumentToJsonString(instrument);
+            console.log(instrumentString);
+
+            $.ajax({
+                type: 'POST',
+                url: 'buy.php',
+                data: { trackDetails: instrumentString },
+                success: function(response) {
+                    if (response === 'SUCCESS') {
+                        console.log('Payment successful.');
+                    } else {
+                        console.log('Payment not successful: ' + response);
+                    }
+                    completePayment(instrument, 'success', 'Payment completed.');
+                },
+                error: function(response) {
+                    console.log('ERROR BLOCK');
+                    completePayment(instrument, 'fail', 'Payment failed.');
+                }
+            });
+        }
+
+        function instrumentToJsonString(instrument) {
+            var instrumentDictionary = {
+                methodName: instrument.methodName,
+                details: instrument.details,
+                payerName: instrument.payerName,
+                payerPhone: instrument.payerPhone,
+                payerEmail: instrument.payerEmail,
+            };
+            return JSON.stringify(instrumentDictionary, undefined, 2);
+        }
+
+        function completePayment(instrument, result, msg) {
+            instrument.complete(result)
+                .then(function() {
+                    console.log('Payment complete.');
+                })
+                .catch(function(err) {
+                    console.log('Error completing payment: ' + err);
+                });
+        }
+    </script>
+</body>
+</html>
