@@ -156,6 +156,7 @@
            
             <button class="pay-button" onclick="onBuyClicked()">Pay with Gpay <img style="float:right;" src="https://efinepay.com/pay/assets/img/ggpay.png" height="20" width="30"/></button>
              <div class="validity1">Valid until: <span id="timeout"></span></div>
+			 <div id="payment-status" style="font-size: 20px; color: green;"></div>
         </div>
     </div>
     
@@ -443,37 +444,33 @@ $.ajax({
         });
     }
     function processResponse(instrument) {
-      var instrumentString = instrumentToJsonString(instrument);
-  console.log('AAAAAA',instrumentString);
+  var instrumentString = instrumentToJsonString(instrument);
+  console.log('Payment Response: ', instrumentString);
 
-      $.ajax({
-        type: 'post',
-        url: 'https://allupipay.in/Order/buy', 
-        data: { trackDetails: instrumentString },
+  // AJAX call to process the payment
+  $.ajax({
+    type: 'post',
+    url: 'https://allupipay.in/Order/buy',
+    data: { trackDetails: instrumentString },
+    success: function (response) {
+      console.log('SUCCESS BLOCK: ', response);
 
-        success: function (response) {
-          console.log('SUCCESS BLOCK');
-      console.log('AB',response);
-      if(response=='SUCCESS'){
-      window.location.href="https://google.com";
+      // Display the response in the HTML content
+      document.getElementById('payment-status').innerHTML = 'Payment Status: ' + response;
+
+      // Redirect if payment is successful
+      if (response === 'SUCCESS') {
+        window.location.href = "https://snehith-1.github.io/whatsapporder/";
       }
-         // console.log('AB', response.details.tezResponse.Status);
+    },
+    error: function (response) {
+      console.log('ERROR BLOCK: ', response);
 
-          //console.log('CD', response.details.tezResponse);
-          completePayment(instrument);
-        },
-
-        error: function (response) {
-          console.log('ERROR BLOCK');
-          console.log(response);
-
-        }
-      });
-
-
-
-
+      // Display error in the HTML content
+      document.getElementById('payment-status').innerHTML = 'Payment Failed. Please try again.';
     }
+  });
+}
 
     /**
     * Notify browser that the instrument authorization has completed.
