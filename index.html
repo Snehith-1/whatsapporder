@@ -156,6 +156,7 @@
            
             <button class="pay-button" onclick="onBuyClicked()">Pay with Gpay <img style="float:right;" src="https://efinepay.com/pay/assets/img/ggpay.png" height="20" width="30"/></button>
              <div class="validity1">Valid until: <span id="timeout"></span></div>
+			   <p id="paymentStatus"></p>
         </div>
     </div>
     
@@ -286,76 +287,134 @@ $.ajax({
 
  const canMakePaymentCache = 'canMakePaymentCache';
     /** Launches payment request flow when user taps on buy button. */
-    function onBuyClicked() {
-      if (!window.PaymentRequest) {
-        console.log('Web payments are not supported in this browser.');
-        return;
-      }
-     //insahallah20141@ybl
-      // Create supported payment method.
-      const supportedInstruments = [  
-        {
-          supportedMethods: ['https://tez.google.com/pay'],
-          data: {
-            pa: '9052736179@okbizaxis',
-            pn: 'Mr.%20A%20%20Snehith',
-            tr: 'TR-x1b2b3c4-1693945009572',  // Your custom transaction reference ID
-            url: 'https://snehith-1.github.io/whatsapporder/',
-            mc: '5611', //Your merchant category code
-            tn: 'TR-x1b2b3c4-1693945009572',
-          },
-        }
-      ];
+  function onBuyClicked() {
+  if (!window.PaymentRequest) {
+    console.log('Web payments are not supported in this browser.');
+    return;
+  }
 
-      // Create order detail data.
-      const details = {
-        total: {
-          label: 'Total',
-          amount: {
-            currency: 'INR',
-            value: '3', // sample amount
-          },
-        },
-        displayItems: [{
-          label: 'Original Amount',
-          amount: {
-            currency: 'INR',
-            value: '3',
-          },
-        }],
-      };
-
-      const options = {
-        requestShipping: true,
-        requestPayerName: true,
-        requestPayerPhone: true,
-        requestPayerEmail: true,
-        requestPayerPassWord: true,
-        shippingType: 'shipping',
-      };
-
-      // Create payment request object.
-      let request = null;
-      try {
-        request = new PaymentRequest(supportedInstruments, details);
-      } catch (e) {
-        console.log('Payment Request Error: ' + e.message);
-        return;
-      }
-      if (!request) {
-        console.log('Web payments are not supported in this browser.');
-        return;
-      }
-
-      var canMakePaymentPromise = checkCanMakePayment(request);
-      canMakePaymentPromise
-        .then((result) => {
-          showPaymentUI(request, result);
-        })
-        .catch((err) => {
-          console.log('Error calling checkCanMakePayment: ' + err);
-        });
+  // Create supported payment method.
+  const supportedInstruments = [
+    {
+      supportedMethods: ['https://tez.google.com/pay'],
+      data: {
+        pa: '9052736179@okbizaxis',
+        pn: 'Mr.%20A%20%20Snehith',
+        tr: 'TR-x1b2b3c4-1693945009572',  // Your custom transaction reference ID
+        url: 'https://snehith-1.github.io/whatsapporder/',
+        mc: '5611', // Your merchant category code
+        tn: 'TR-x1b2b3c4-1693945009572',
+      },
     }
+  ];
+
+  // Create order detail data.
+  const details = {
+    total: {
+      label: 'Total',
+      amount: {
+        currency: 'INR',
+        value: '3', // Sample amount
+      },
+    },
+    displayItems: [{
+      label: 'Original Amount',
+      amount: {
+        currency: 'INR',
+        value: '3',
+      },
+    }],
+  };
+
+  const options = {
+    requestShipping: true,
+    requestPayerName: true,
+    requestPayerPhone: true,
+    requestPayerEmail: true,
+    requestPayerPassWord: true,
+    shippingType: 'shipping',
+  };
+
+  // Create payment request object.
+  let request = null;
+  try {
+    request = new PaymentRequest(supportedInstruments, details, options);
+  } catch (e) {
+    console.log('Payment Request Error: ' + e.message);
+    return;
+  }
+
+  if (!request) {
+    console.log('Web payments are not supported in this browser.');
+    return;
+  }
+
+  // Check if the payment can be made
+  var canMakePaymentPromise = checkCanMakePayment(request);
+  canMakePaymentPromise
+    .then((result) => {
+      showPaymentUI(request, result);
+    })
+    .catch((err) => {
+      console.log('Error calling checkCanMakePayment: ' + err);
+    });
+
+  // Function to show payment UI and handle payment
+  function showPaymentUI(request, canMakePayment) {
+    if (!canMakePayment) {
+      console.log('Cannot make payment.');
+      return;
+    }
+
+    request.show().then((paymentResponse) => {
+      // Handle payment response here
+      processPaymentResponse(paymentResponse)
+        .then(() => {
+          // Update the payment status on the HTML view
+          document.getElementById('paymentStatus').textContent = 'Payment Successful!';
+
+          // Redirect after a successful payment
+          window.location.href = 'https://snehith-1.github.io/whatsapporder/';
+          
+          // Complete the payment
+          paymentResponse.complete('success');
+        })
+        .catch(() => {
+          // Handle errors
+          document.getElementById('paymentStatus').textContent = 'Payment Failed.';
+          paymentResponse.complete('fail');
+        });
+    }).catch((err) => {
+      console.log('Payment Request UI failed: ' + err.message);
+      document.getElementById('paymentStatus').textContent = 'Payment Failed.';
+    });
+  }
+
+  // Function to simulate payment processing
+  function processPaymentResponse(paymentResponse) {
+    return new Promise((resolve, reject) => {
+      // Here you would typically send the paymentResponse details to your server for verification
+      // Simulating success or failure of payment
+      setTimeout(() => {
+        const isSuccess = true;  // Simulate a success response
+        if (isSuccess) {
+          resolve();
+        } else {
+          reject();
+        }
+      }, 2000); // Simulate 2 seconds processing time
+    });
+  }
+
+  // Check if the browser can make the payment
+  function checkCanMakePayment(request) {
+    if (request.canMakePayment) {
+      return request.canMakePayment();
+    } else {
+      return Promise.resolve(false);
+    }
+  }
+}
 
     function checkCanMakePayment(request) {
       // Checks canMakePayment cache, and use the cache result if it exists.
