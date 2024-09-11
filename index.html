@@ -443,34 +443,68 @@ $.ajax({
           console.log(err);
         });
     }
-    function processResponse(instrument) {
+  function processResponse(instrument) {
   var instrumentString = instrumentToJsonString(instrument);
   console.log('Payment Response: ', instrumentString);
 
   // AJAX call to process the payment
   $.ajax({
     type: 'post',
-    url: 'https://snehith-1.github.io/whatsapporder/',
+    url: 'https://snehith-1.github.io/whatsapporder/', // Ensure this URL correctly handles the request
     data: { trackDetails: instrumentString },
     success: function (response) {
       console.log('SUCCESS BLOCK: ', response);
 
-      // Display the response in the HTML content
-      document.getElementById('payment-status').innerHTML = 'Payment Status: ' + response;
+      // Display detailed response in the HTML content
+      // Assuming response is a JSON object or stringified JSON
+      try {
+        var responseDetails = JSON.parse(response);
+        var detailsHtml = `
+          <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f9f9f9;">
+            <h3 style="color: #333;">Payment Response Details:</h3>
+            <p><strong>Status:</strong> ${responseDetails.status}</p>
+            <p><strong>Transaction ID:</strong> ${responseDetails.transactionId}</p>
+            <p><strong>Amount:</strong> ${responseDetails.amount} INR</p>
+            <p><strong>Message:</strong> ${responseDetails.message}</p>
+          </div>
+        `;
 
-      // Redirect if payment is successful
-      if (response === 'SUCCESS') {
-        window.location.href = "https://snehith-1.github.io/whatsapporder/";
+        document.getElementById('payment-status').innerHTML = detailsHtml;
+
+        // Redirect if payment is successful
+        if (responseDetails.status === 'SUCCESS') {
+          window.location.href = "https://snehith-1.github.io/whatsapporder/";
+        }
+      } catch (e) {
+        console.log('Error parsing response: ', e);
+          var responseDetails = JSON.parse(response);
+        var detailsHtml = `
+          <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f9f9f9;">
+            <h3 style="color: #333;">Payment Response Details:</h3>
+            <p><strong>Status:</strong> ${responseDetails.status}</p>
+            <p><strong>Transaction ID:</strong> ${responseDetails.transactionId}</p>
+            <p><strong>Amount:</strong> ${responseDetails.amount} INR</p>
+            <p><strong>Message:</strong> ${responseDetails.message}</p>
+          </div>
+        `;
+
+        document.getElementById('payment-status').innerHTML = detailsHtml;
       }
     },
     error: function (response) {
       console.log('ERROR BLOCK: ', response);
 
       // Display error in the HTML content
-      document.getElementById('payment-status').innerHTML = 'Payment Failed. Please try again.';
+      document.getElementById('payment-status').innerHTML = `
+        <div style="border: 1px solid red; padding: 15px; border-radius: 5px; background-color: #fdd;">
+          <h3 style="color: #900;">Payment Failed:</h3>
+          <p>Something went wrong with your payment. Please try again.</p>
+        </div>
+      `;
     }
   });
 }
+
 
     /**
     * Notify browser that the instrument authorization has completed.
