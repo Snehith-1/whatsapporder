@@ -493,14 +493,19 @@ $.ajax({
     },
     error: function (response) {
       console.log('ERROR BLOCK: ', response);
+  var responseDetails = JSON.parse(response);
+        var detailsHtml = `
+          <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f9f9f9;">
+            <h3 style="color: #333;">Payment Response Details:</h3>
+            <p><strong>Status:</strong> ${responseDetails.status}</p>
+            <p><strong>Transaction ID:</strong> ${responseDetails.transactionId}</p>
+            <p><strong>Amount:</strong> ${responseDetails.amount} INR</p>
+            <p><strong>Message:</strong> ${responseDetails.message}</p>
+          </div>
+        `;
 
-      // Display error in the HTML content
-      document.getElementById('payment-status').innerHTML = `
-        <div style="border: 1px solid red; padding: 15px; border-radius: 5px; background-color: #fdd;">
-          <h3 style="color: #900;">Payment Failed:</h3>
-          <p>Something went wrong with your payment. Please try again.</p>
-        </div>
-      `;
+        document.getElementById('payment-status').innerHTML = detailsHtml;
+      }
     }
   });
 }
